@@ -6,13 +6,14 @@ import {
   getTasks,
   updateTask,
 } from "../controller/task.controller.js";
+import upload from "../middlewares/upload.js";
 
 const router = express.Router();
 
-router.post("/createTask", createTask);
+router.post("/createTask", upload.single("thumbnail"), createTask);
 router.get("/getTasks", getTasks);
 router.get("/getTask/:id", getTaskById);
-router.put("/updateTask/:id", updateTask);
+router.put("/updateTask/:id", upload.single("thumbnail"), updateTask);
 router.delete("/deleteTask/:id", deleteTask);
 
 export default router;

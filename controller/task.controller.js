@@ -1,18 +1,19 @@
+import { uploadToCloudinary } from "../config/cloudinary.js";
 import { Task } from "../models/task.model.js";
 
 // 1. Create Task
 export const createTask = async (req, res) => {
   try {
-    const {
-      title,
-      description,
-      techStacks,
-      thumbnail,
-      priority,
-      status,
-      dueDate,
-    } = req.body;
-
+    const { title, description, priority, status, dueDate } = req.body;
+    let techStacks = [];
+    try {
+      techStacks =
+        typeof req.body.techStacks === "string"
+          ? JSON.parse(req.body.techStacks || "[]")
+          : req.body.techStacks || [];
+    } catch {
+      techStacks = req.body.techStacks ? [req.body.techStacks] : [];
+    }
     if (!title?.trim()) {
       return res.status(400).json({
         success: false,
@@ -65,11 +66,18 @@ export const createTask = async (req, res) => {
       });
     }
 
+    let thumbnailUrl = "";
+
+    if (req.file) {
+      const result = await uploadToCloudinary(req.file.buffer);
+      thumbnailUrl = result.secure_url;
+    }
+
     const task = await Task.create({
       title: title.trim(),
       description: description.trim(),
       techStacks,
-      thumbnail,
+      thumbnail: thumbnailUrl,
       priority,
       status,
       dueDate,
@@ -176,40 +184,14 @@ export const getTaskById = async (req, res) => {
 export const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
+    const { title, description, techStacks, priority, status, dueDate } =
+      req.body;
 
-    // Get updated data from frontend
-    const {
-      title,
-      description,
-      techStacks,
-      thumbnail,
-      priority,
-      status,
-      dueDate,
-    } = req.body;
+    const task = await Task.findOne({
+      _id: id,
+      user: req.user.id,
+    });
 
-    // Find the task and update it
-    const task = await Task.findOneAndUpdate(
-      {
-        _id: id,
-        user: req.user.id,
-      },
-      {
-        title,
-        description,
-        techStacks,
-        thumbnail,
-        priority,
-        status,
-        dueDate,
-      },
-      {
-        new: true,
-        runValidators: true,
-      },
-    );
-
-    // If task does not exist
     if (!task) {
       return res.status(404).json({
         success: false,
@@ -217,7 +199,21 @@ export const updateTask = async (req, res) => {
       });
     }
 
-    // Send success response
+    // Update image only if a new file was uploaded
+    if (req.file) {
+      const result = await uploadToCloudinary(req.file.buffer);
+      task.thumbnail = result.secure_url;
+    }
+
+    task.title = title ?? task.title;
+    task.description = description ?? task.description;
+    task.techStacks = techStacks ? JSON.parse(techStacks) : task.techStacks;
+    task.priority = priority ?? task.priority;
+    task.status = status ?? task.status;
+    task.dueDate = dueDate ?? task.dueDate;
+
+    await task.save();
+
     return res.status(200).json({
       success: true,
       message: "Task updated successfully",

@@ -1,13 +1,21 @@
+import "dotenv/config";
 import express from "express";
 import connectDB from "./config/connectDB.js";
-import { config } from "dotenv";
+import cors from "cors";
 import cookieParser from "cookie-parser";
 import routes from "./routes/index.routes.js";
 
 const app = express();
-config();
 connectDB();
 
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(cookieParser());
 
