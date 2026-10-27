@@ -8,9 +8,14 @@ import routes from "./routes/index.routes.js";
 const app = express();
 connectDB();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://task-management-client-ruby.vercel.app",
+];
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
@@ -27,6 +32,8 @@ app.get("/", (req, res) => {
   });
 });
 
-app.listen(2000, (req, res) => {
-  console.log(`http://localhost:${2000}`);
-});
+// app.listen(2000, (req, res) => {
+//   console.log(`http://localhost:${2000}`);
+// });
+
+export default app;
